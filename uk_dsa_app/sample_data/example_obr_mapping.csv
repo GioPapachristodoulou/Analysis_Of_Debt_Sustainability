@@ -1,0 +1,6 @@
+obr_series_name,app_metric_id,notes
+PSND_ex_percent_GDP,debt_ratio,OBR's PSND ex as % GDP
+PSNB_ex_percent_GDP,deficit_ratio,OBR's net borrowing as % GDP
+GDP_deflator_growth,gdp_deflator_growth,OBR GDP deflator % growth
+Nominal_GDP,gdp_nominal,OBR nominal GDP level
+Debt_interest_percent_GDP,interest_ratio,OBR debt interest (% GDP)

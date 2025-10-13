@@ -1,0 +1,59 @@
+/* Professional clean theme overrides for Streamlit */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+html, body, [class*="css"] {
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji" !important;
+}
+
+.block-container {
+  padding-top: 1rem;
+  padding-bottom: 3rem;
+  max-width: 1280px;
+}
+
+h1, h2, h3 {
+  letter-spacing: 0.2px;
+}
+
+hr {
+  border: 0;
+  height: 1px;
+  background: #e5e7eb;
+  margin: 1rem 0;
+}
+
+.sidebar .sidebar-content {
+  background: #ffffff !important;
+}
+
+.small-note {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.banner {
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.kpi {
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  padding: 1rem;
+  background: #fff;
+}
+
+.plot-caption {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-top: -0.5rem;
+}
+
+.warning-box {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  padding: 0.8rem 1rem;
+}
