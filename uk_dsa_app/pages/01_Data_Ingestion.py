@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -5,7 +6,7 @@ import numpy as np
 from dsa.metrics import all_metrics_definition
 from dsa.timeseries import DataManager
 from dsa.io import parse_pasted_two_column, read_csv_uploaded, read_excel_uploaded, normalize_index_to_freq, paste_matrix_to_series
-from dsa.config import FREQ_DEPENDENCY_RULES, SUPPORTED_FREQS, IMPERIAL_LOGO_PATH
+from dsa.config import FREQ_DEPENDENCY_RULES, SUPPORTED_FREQS
 
 def init_session():
     if "metrics_def" not in st.session_state:
@@ -18,13 +19,8 @@ def init_session():
 def page():
     init_session()
     st.title("Data Ingestion")
-    st.write("Provide raw data series. Use Excel-style paste or upload CSV/Excel. The pipeline adapts to monthly/quarterly/yearly inputs and enforces dependency rules where needed.")
-
-    with st.expander("Instructions for paste/upload", expanded=False):
-        st.markdown("- Paste two columns: date (YYYY or YYYY-MM) and value (e.g., 2020, 2200.5).")
-        st.markdown("- Or upload CSV/Excel with first column as year/date and second as values.")
-        st.markdown("- Units generally in £ billions for flows and stocks; yields in %; indices as provided.")
-        st.markdown("- The engine auto-resamples and aligns series for modeling.")
+    st.write("Ingest raw series (PSND ex, PSNB ex, Debt Interest, Nominal GDP, etc.) and set each metric's frequency. Derived metrics are computed automatically and do not appear here.")
+    st.info("Inputs required: provide PSND ex BoE, Nominal GDP, PSNB ex, and Debt Interest. Optional series (deflator, CPI, maturities) improve outputs. Derived items (Primary Balance, Debt/GDP, Effective rate, Nominal g) are auto-computed and thus not listed here.")
 
     metrics_def = st.session_state.metrics_def
     dm = st.session_state.dm
@@ -33,6 +29,9 @@ def page():
     cols = st.columns(3)
     i = 0
     for mid, m in metrics_def.items():
+        # Skip derived metrics in frequency selection
+        if m.derived:
+            continue
         if not m.user_selectable_frequency:
             dm.set_user_freq(mid, m.default_freq)
             continue
@@ -42,18 +41,22 @@ def page():
             dm.set_user_freq(mid, freq)
         i += 1
 
-    # Enforce dependency rules
     changes = dm.enforce_frequency_dependencies(FREQ_DEPENDENCY_RULES)
     if changes:
         st.info("Adjusted frequencies to respect dependencies: " + ", ".join([f"{k}→{v}" for k, v in changes.items()]))
 
     st.subheader("Enter data series")
     for mid, m in metrics_def.items():
+        # Skip derived metrics in data entry
+        if m.derived:
+            continue
         with st.expander(f"{m.display_name} [{m.unit}] - {m.description}", expanded=False):
             st.caption(f"Metric ID: {mid}")
             entry_freq = dm.get_user_freq(mid)
             st.write(f"Chosen input frequency: {entry_freq}")
-            mode = st.radio(f"How would you like to provide {m.display_name} data?", options=["Paste two-column", "Upload CSV", "Upload Excel", "Paste single-column to predefined index"], key=f"mode_{mid}", horizontal=True)
+            st.caption("Tip: you can paste an Excel column directly; the app will align dates.")
+
+            mode = st.radio(f"Provide {m.display_name} via", options=["Paste two-column", "Upload CSV", "Upload Excel", "Paste single-column to predefined index"], key=f"mode_{mid}", horizontal=True)
             series = None
             if mode in ("Upload CSV", "Upload Excel"):
                 file = st.file_uploader(f"Upload file for {m.display_name}", type=["csv", "xlsx", "xls"], key=f"file_{mid}")
@@ -71,10 +74,7 @@ def page():
                     s = normalize_index_to_freq(s, entry_freq)
                     series = s
             else:
-                # Single column paste to predefined index
-                # Build index scaffold
                 if entry_freq == "yearly":
-                    st.write("Provide contiguous years range and paste single column values to match.")
                     y0 = st.number_input("Start Year", value=1970, step=1, key=f"y0_{mid}")
                     y1 = st.number_input("End Year", value=2025, step=1, key=f"y1_{mid}")
                     idx = [str(y) for y in range(int(y0), int(y1)+1)]
@@ -101,16 +101,31 @@ def page():
 
             if series is not None and not series.empty:
                 st.write(f"Ingested {len(series)} observations")
-                # Basic preview
                 st.dataframe(series.to_frame(name=m.display_name).tail(10))
-                # Save
                 dm.add_series(mid, series, unit=m.unit, freq=entry_freq)
             else:
                 st.write("No data provided yet.")
 
-    st.success("Data ingestion step complete. Proceed to Data QA.")
-    st.markdown("---")
-    st.image(IMPERIAL_LOGO_PATH, caption="Placeholder logo. Replace with authorized asset only if permitted.", use_column_width=False)
+    # Coverage summary
+    st.subheader("Coverage summary")
+    rows = []
+    for mid, m in metrics_def.items():
+        if m.derived:
+            continue
+        s = dm.get_series(mid)
+        if not s.empty:
+            rows.append({
+                "metric_id": mid,
+                "name": m.display_name,
+                "freq": dm.get_user_freq(mid),
+                "start": str(s.index.min()),
+                "end": str(s.index.max()),
+                "obs": len(s),
+            })
+    if rows:
+        st.dataframe(pd.DataFrame(rows))
+
+    st.success("Data ingestion step complete. Next: Data QA.")
 
 if __name__ == "__main__":
     page()
