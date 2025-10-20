@@ -1,0 +1,6 @@
+# Streamlit Cloud Deployment Marker
+# This file forces Streamlit to recognize repo changes
+
+DEPLOY_TIMESTAMP=2025-10-20T03:50:00Z
+COMMIT_SHA=3f1d6b088fabdff53de6fe4ab495ff03fe546c93
+VERSION=0.3.0-latest
